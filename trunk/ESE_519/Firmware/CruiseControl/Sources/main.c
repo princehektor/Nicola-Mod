@@ -30,18 +30,28 @@ typedef struct _Car
     float wheelRadius[4];
 } Car;
 
+/*typedef struct _Allparams{
+        CarParams carParams;
+        BrakeMsg Brakeparams;
+        CarDistance carDistance;
+}Allparams;
+        
+ volatile Allparams params; 
+ */
+
 CarInputs carInputs;
 CarParams carParams;
 CarDistance carDistance;
 
 volatile UINT8 carInputsUpdated = 0;
 volatile UINT8 carParamsUpdated = 0;
+volatile UINT8 brakeParamsUpdated = 0;
 volatile UINT8 accelCorrection =  0;
 volatile UINT8 accelCorrection1 = 50 ;
 volatile float setSpeed = -1.0;
 volatile float des_speed = 0.0,temp=0.0;
 volatile float time=0.0;
-volatile float d1=0,d2=0,range1=0,range2=0;
+volatile float d1=0,d2=0,range1=0,range2=0,serial=0;
 
 const Car car = {
     {0, 3.9*4.5, 2.9*4.5, 2.3*4.5, 1.87*4.5, 1.68*4.5, 1.54*4.5, 1.46*4.5},
@@ -146,13 +156,13 @@ void main(void)
                     //CANTx(CAN_ACCEL_CORR_MSG_ID,&accel_corr,sizeof(AccelMsg));
                     CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
                  }
-                if((carParams.speed = setSpeed)&&(carDistance.distance>des_distance))
+                /*if((carParams.speed == setSpeed)&&(carDistance.distance>des_distance))
                 {
                      accelMsg.accel = 15 ;
                      accelMsg.gear = gear;
                      accelMsg.clutch = 0;
-                }
-                
+                } */
+               
             }
                     
             CANTx(CAN_ACCEL_MSG_ID, &accelMsg, sizeof(AccelMsg));
@@ -290,13 +300,15 @@ void main(void)
             }
             carInputsUpdated = 0;
         }
-        /*if(count>=1000000) 
-        {  
-            d1=carDistance.distance1;
-            range1=carDistance.distance;
-            count=0;
-        }
-        count++;*/
+        /*if(brakeParamsUpdated)
+        {
+            SCITxPkt(&params, sizeof(Allparams));
+            carParamsUpdated = 0;
+            brakeParamsUpdated = 0;
+            serial=1;
+            //for(i = 0; i < 1000; i++);
+        } */
+
     }
 }
 
@@ -360,6 +372,7 @@ interrupt 38 void CANRx_vect(void)
                 length = sizeof(CarParams);
 
             memcpy(&carParams, &CANRXDSR0, length);
+            //params.carParams = carParams;
             carParamsUpdated = 1;
         }
     }
@@ -373,8 +386,21 @@ interrupt 38 void CANRx_vect(void)
         length = sizeof(CarDistance);
         
         memcpy(&carDistance, &CANRXDSR0, length);
+        //params.carDistance=carDistance;
         //printf("\n Distance is %d \r\n ", carDistance.distance * 8);
     }
+    /*else if(identifier == CAN_BRAKE_MSG_ID)
+    {
+        //if(!brakeParamsUpdated) // Only update when old values have been used
+        {
+            if(length > sizeof(BrakeMsg))
+                length = sizeof(BrakeMsg);
+
+            memcpy(&(params.Brakeparams), &CANRXDSR0, length);
+            brakeParamsUpdated = 1;
+        }
+    }*/
+
 
     CANRFLG_RXF = 1; // Reset the flag
 }
