@@ -81,7 +81,7 @@ void main(void)
     INT8 brake;
     INT8 gear = 0;
     
-    INT8 des_distance = 20;
+    INT8 des_distance = 30;
     INT8 timegap = 0;
     //INT8 des_speed = 0;
     //INT8 meas_distance = 0;
@@ -138,7 +138,7 @@ void main(void)
 
                     gear = (UINT8) limit(getGear(gear), 0, 7);
 
-                    accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 100) ;
+                    accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 50) ;
                     accelMsg.gear = gear;
                     accelMsg.clutch = 0;
                 
@@ -157,7 +157,7 @@ void main(void)
                     if(( carParams.speed > setSpeed)&&(flag==1))           
                     {
                         //CANTx(CAN_ACCEL_CORR_MSG_ID,&accel_corr,sizeof(AccelMsg));
-                        CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
+                        //CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
                     }
                     /*if((carParams.speed == setSpeed)&&(carDistance.distance>des_distance))
                     {
@@ -171,16 +171,16 @@ void main(void)
                 {  
                     error = (carDistance.distance - des_distance);
                     errInteg += error;
-                    errInteg = limit(errInteg, -100*1/10, 100*500/1);
+                    errInteg = limit(errInteg, -100*200/1, 100*200/1);
 
-                    controlOutput = 10*error/1 + 1*errInteg/500;
+                    controlOutput = 1*error/100 + 1*errInteg/200;
                     controlOutput = limit(controlOutput, 0, 100);
 
                     accel = (UINT8) controlOutput;
 
                     gear = (UINT8) limit(getGear(gear), 0, 7);
 
-                    accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 100) ;
+                    accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 30) ;
                     accelMsg.gear = gear;
                     accelMsg.clutch = 0;
                 
@@ -241,6 +241,7 @@ void main(void)
                         flagdist=1;
                         flagd1=0;
                         flagd2=0;
+                        errInteg=0;
                     }
                     //setSpeed = des_speed;
                     if(flagd2==1)
@@ -269,7 +270,7 @@ void main(void)
                      
                 }
                 
-                else //if(carDistance.distance >(des_distance +3))                                                          //if car in front moves off go back to the speed when
+               /* else if(carDistance.distance >(des_distance + 10))                                                          //if car in front moves off go back to the speed when
                 {   
                                                                            //cruise control was pressed
                     setSpeed = setSpeed1;
@@ -277,8 +278,9 @@ void main(void)
                     flagdist=0;
                     flagd1=1;
                     flagd2=0;
+                    errInteg=0;
                    
-                } 
+                }*/ 
                 
             }
             else

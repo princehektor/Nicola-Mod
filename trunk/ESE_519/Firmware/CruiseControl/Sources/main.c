@@ -49,9 +49,9 @@ volatile UINT8 brakeParamsUpdated = 0;
 volatile UINT8 accelCorrection =  0;
 volatile UINT8 accelCorrection1 = 50 ;
 volatile float setSpeed = -1.0;
-volatile float des_speed = 0.0,temp=0.0;
+volatile float des_speed = 0.0,temp=0.0,des_speed1 = 0.0;
 volatile float time=0.0;
-volatile float d1=0,d2=0,range1=0,range2=0,serial=0;
+volatile float d1=0,d2=0,range1=0,range2=0,serial=0,deltaX=0.0;
 
 const Car car = {
     {0, 3.9*4.5, 2.9*4.5, 2.3*4.5, 1.87*4.5, 1.68*4.5, 1.54*4.5, 1.46*4.5},
@@ -80,13 +80,13 @@ void main(void)
     INT8 brake;
     INT8 gear = 0;
     
-    INT8 des_distance = 50;
+    INT8 des_distance = 30;
     INT8 timegap = 0;
     //INT8 des_speed = 0;
     //INT8 meas_distance = 0;
      float k= 0.01;  /* Constant to decrease the velocity of the car */
      INT8 nicola_speed;
-    INT8 flag=0,flag_acc = 0,flagd1=0,flagd2=1,deltaX=0,acceleration=0;
+    INT8 flag=0,flag_acc = 0,flagd1=0,flagd2=1,acceleration=0;
     INT32 count=0;
     
     //INT16 d1=0,d2=0,range1=0,range2=0;
@@ -124,6 +124,10 @@ void main(void)
             }
             else
             {
+                if((carParams.speed <= (INT8)setSpeed)&&(carDistance.distance>des_distance)&&(carDistance.distance<2500))
+                {
+                    //setSpeed=setSpeed+1; 
+                } 
                 error = (setSpeed - carParams.speed);
                 errInteg += error;
                 errInteg = limit(errInteg, -100*KI_DEN/KI_NUM, 100*KI_DEN/KI_NUM);
@@ -135,7 +139,7 @@ void main(void)
 
                 gear = (UINT8) limit(getGear(gear), 0, 7);
 
-                accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 100) ;
+                accelMsg.accel = (UINT8)limit(accel - accelCorrection, 0, 50) ;
                 accelMsg.gear = gear;
                 accelMsg.clutch = 0;
                 
@@ -154,14 +158,20 @@ void main(void)
                 if(( carParams.speed > setSpeed)&&(flag==1))           
                  {
                     //CANTx(CAN_ACCEL_CORR_MSG_ID,&accel_corr,sizeof(AccelMsg));
-                    CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
+                    //CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
                  }
-                /*if((carParams.speed == setSpeed)&&(carDistance.distance>des_distance))
+                if((carDistance.distance>(des_distance)+5))
                 {
-                     accelMsg.accel = 15 ;
+                     accelMsg.accel = 25 ;
                      accelMsg.gear = gear;
                      accelMsg.clutch = 0;
-                } */
+                } 
+                if((carDistance.distance<des_distance))
+                {
+                     accelMsg.accel = 0 ;
+                     accelMsg.gear = gear;
+                     accelMsg.clutch = 0;
+                } 
                
             }
                     
@@ -183,6 +193,7 @@ void main(void)
                     errInteg = 0;
                     PORTB = 0x70;
                     flag=1;
+                    //deltaX=((0)-(carParams.speed*carParams.speed))/(2*(-6.5));  
                     
                 }
                 
@@ -227,10 +238,14 @@ void main(void)
                         flagd1=1;
                         flagd2=0;
                     }
-                 */    
-                if(carDistance.distance < (des_distance+20 ))
+                 */
+                if(carDistance.distance<2500)
+                {
+                  
+                //deltaX=((16*16)-(carParams.speed*carParams.speed))/(2*(-6.5));
+                //if(carDistance.distance < (des_distance+20 ))
                 //if((carDistance.distance - des_distance) < deltaX)             //When distance between the two cars goes below the 
-                { 
+                //{ 
                     //setSpeed = des_speed;
                     if(flagd2==0)
                     {
@@ -240,13 +255,17 @@ void main(void)
                             d2=carDistance.distance1;
                             time=(d2-d1)/(float)carParams.speed;
                             range2=carDistance.distance;
-                            des_speed= ((range2-range1)/time)+(carParams.speed);
-                            temp=(temp+des_speed);
-                            setSpeed=temp/count;
+                            des_speed1= ((range2-range1)/time)+(carParams.speed);
+                            temp=(temp+des_speed1);
+                            des_speed=temp/count;
                             flagd2=1;
                             flagd1=0;
+                            if(count>7)
+                            deltaX=((des_speed*des_speed)-(carParams.speed*carParams.speed))/(2*(-8.5));
                         }
+                        
                     }
+                    
                     if(flagd1==0)
                     {
                         d1=carDistance.distance1;
@@ -254,27 +273,25 @@ void main(void)
                         flagd1=1;
                         flagd2=0;
                     }
-                    /*d2=carDistance.distance1;
-                    time=(d2-d1)/carParams.speed;
-                    range2=carDistance.distance;
-                    if(flag_acc == 0) 
+                    if((carDistance.distance - des_distance) < deltaX) 
                     {
-                        flag_acc = 1; 
-                        des_speed= ((range2-range1)/time)+(carParams.speed);
+                        setSpeed=des_speed;
+                        flag=1;
+                    } 
+                    else if(flag)//if(carDistance.distance > (des_distance+10))
+                    {
+                        setSpeed=des_speed;
                     }
-                    setSpeed=des_speed;*/
-                     
                 }
-                /*else if(carDistance.distance < des_distance)
-                {
-                    setSpeed = des_speed;
-                } */
-                else //if(carDistance.distance >(des_distance +3))                                                          //if car in front moves off go back to the speed when
+                else if(carDistance.distance ==2500)                                                          //if car in front moves off go back to the speed when
                 {   
                                                                            //cruise control was pressed
                     setSpeed = setSpeed1;
                     flag_acc = 0;
                     flag=0;
+                    flagd2=1;
+                    flagd1=0;
+                    errInteg = 0;
                    
                 } 
                 
