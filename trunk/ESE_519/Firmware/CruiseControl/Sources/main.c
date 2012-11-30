@@ -51,7 +51,7 @@ volatile UINT8 accelCorrection1 = 50 ;
 volatile float setSpeed = -1.0;
 volatile float des_speed = 0.0,temp=0.0,des_speed1 = 0.0;
 volatile float time=0.0;
-volatile float d1=0,d2=0,range1=0,range2=0,serial=0,deltaX=0.0;
+volatile float d1=0,d2=0,range1=0,range2=0,serial=0,deltaX=0;
 
 const Car car = {
     {0, 3.9*4.5, 2.9*4.5, 2.3*4.5, 1.87*4.5, 1.68*4.5, 1.54*4.5, 1.46*4.5},
@@ -82,15 +82,10 @@ void main(void)
     
     INT8 des_distance = 30;
     INT8 timegap = 0;
-    //INT8 des_speed = 0;
-    //INT8 meas_distance = 0;
-     float k= 0.01;  /* Constant to decrease the velocity of the car */
+
      INT8 nicola_speed;
     INT8 flag=0,flag_acc = 0,flagd1=0,flagd2=1,acceleration=0;
     INT32 count=0;
-    
-    //INT16 d1=0,d2=0,range1=0,range2=0;
-    
 
     UINT8 cruiseOn = 0;
 
@@ -155,12 +150,12 @@ void main(void)
                 brake_msg.brakeRR = (UINT8)limit(brake - accelCorrection, 0, 100) ; 
                 
                 
-                if(( carParams.speed > setSpeed)&&(flag==1))           
+                /*if(( carParams.speed > setSpeed)&&(carDistance.distance<2500))           
                  {
                     //CANTx(CAN_ACCEL_CORR_MSG_ID,&accel_corr,sizeof(AccelMsg));
                     //CANTx(CAN_BRAKE_MSG_ID,&brake_msg,sizeof(BrakeMsg));
-                 }
-                if((carDistance.distance>(des_distance)+5))
+                 }*/
+                if((carDistance.distance>(des_distance)+1)&&(flag==1))
                 {
                      accelMsg.accel = 25 ;
                      accelMsg.gear = gear;
@@ -193,16 +188,10 @@ void main(void)
                     errInteg = 0;
                     PORTB = 0x70;
                     flag=1;
-                    //deltaX=((0)-(carParams.speed*carParams.speed))/(2*(-6.5));  
+                    //deltaX=((0)-(carParams.speed*carParams.speed))/(2*(-8.5));  
                     
                 }
                 
-                /*if(nicola_speed < carParams.speed) {
-                  setSpeed = nicola_speed;
-                  flag = 1;
-                  
-                  
-                } */
                
                 /*if(carDistance.distance < (des_distance + 4))             //When distance between the two cars goes below the 
                 {                                                   //desired limit, ACC kicks in by calculating the new speed
@@ -244,7 +233,8 @@ void main(void)
                   
                 //deltaX=((16*16)-(carParams.speed*carParams.speed))/(2*(-6.5));
                 //if(carDistance.distance < (des_distance+20 ))
-                //if((carDistance.distance - des_distance) < deltaX)             //When distance between the two cars goes below the 
+                //if((carDistance.distance - des_distance) < deltaX)            
+                 //When distance between the two cars goes below the 
                 //{ 
                     //setSpeed = des_speed;
                     if(flagd2==0)
@@ -261,7 +251,7 @@ void main(void)
                             flagd2=1;
                             flagd1=0;
                             if(count>7)
-                            deltaX=((des_speed*des_speed)-(carParams.speed*carParams.speed))/(2*(-8.5));
+                            deltaX=((des_speed*des_speed)-(carParams.speed*carParams.speed))/(2*(-6.5));
                         }
                         
                     }

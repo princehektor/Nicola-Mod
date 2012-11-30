@@ -27,6 +27,7 @@ typedef struct _Allparams{
         CarParams carParams;
         BrakeMsg Brakeparams;
         CarDistance carDistance;
+        //UINT8 sensor;
 }Allparams;
         
  volatile Allparams params; 
@@ -160,6 +161,11 @@ interrupt 38 void CANRx_vect(void)
 
             memcpy(&(params.carDistance), &CANRXDSR0, length);
            // brakeParamsUpdated = 1;
+           
+           /*if(params.carDistance.distance<2500)
+              params.sensor=1;
+           else
+              params.sensor=0;*/
         }
     }
     CANRFLG_RXF = 1; // Reset the flag
